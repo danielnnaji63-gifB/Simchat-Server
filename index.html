@@ -1,0 +1,1541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SIMBED SimChat AI</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f0f7f0;
+    --surface: #ffffff;
+    --card: #ffffff;
+    --border: #b8ddb8;
+    --accent: #2d7a2d;
+    --accent2: #3da63d;
+    --accent3: #1a5c1a;
+    --text: #1a2e1a;
+    --muted: #5a7a5a;
+    --success: #2d7a2d;
+    --danger: #c0392b;
+    --glow: 0 0 20px rgba(45,122,45,0.18);
+    --light-green: #e8f5e8;
+    --mid-green: #c8e6c8;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Outfit', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 700px 500px at 5% 10%, rgba(45,122,45,0.06) 0%, transparent 70%),
+      radial-gradient(ellipse 600px 400px at 95% 90%, rgba(61,166,61,0.05) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(20px);
+    border-bottom: 2px solid var(--border);
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 70px;
+    box-shadow: 0 2px 12px rgba(45,122,45,0.08);
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo img {
+    height: 50px;
+    width: auto;
+    object-fit: contain;
+  }
+
+  .logo-text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.1;
+  }
+
+  .logo-text .brand {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--accent3);
+    letter-spacing: 0.5px;
+  }
+
+  .logo-text .sub {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--muted);
+    letter-spacing: 1.5px;
+  }
+
+  #header-clock {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.9rem;
+    color: var(--accent);
+    letter-spacing: 2px;
+    background: var(--light-green);
+    padding: 7px 16px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    font-weight: 700;
+  }
+
+  nav {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    padding: 1.5rem 2rem 0;
+    position: relative;
+    z-index: 1;
+    flex-wrap: wrap;
+  }
+
+  .tab-btn {
+    padding: 10px 22px;
+    border-radius: 50px;
+    border: 2px solid var(--border);
+    background: var(--surface);
+    color: var(--muted);
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex; align-items: center; gap: 7px;
+  }
+
+  .tab-btn:hover { border-color: var(--accent2); color: var(--accent); background: var(--light-green); }
+
+  .tab-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    box-shadow: var(--glow);
+  }
+
+  .panel {
+    display: none;
+    max-width: 900px;
+    margin: 1.5rem auto;
+    padding: 0 1.5rem 3rem;
+    position: relative;
+    z-index: 1;
+    animation: fadeUp 0.3s ease;
+  }
+
+  .panel.active { display: block; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .card {
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: 18px;
+    padding: 1.8rem;
+    box-shadow: 0 4px 24px rgba(45,122,45,0.08);
+  }
+
+  /* ── AI CHAT LAYOUT ── */
+  .chat-layout {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    gap: 16px;
+    align-items: start;
+  }
+
+  .history-sidebar {
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: 18px;
+    padding: 1.2rem;
+    box-shadow: 0 4px 24px rgba(45,122,45,0.08);
+    max-height: 580px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .history-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 4px;
+  }
+
+  .history-title {
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .new-chat-btn {
+    background: var(--light-green);
+    border: 1.5px solid var(--border);
+    color: var(--accent);
+    padding: 5px 10px;
+    border-radius: 8px;
+    font-size: 0.78rem;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .new-chat-btn:hover { background: var(--mid-green); border-color: var(--accent2); }
+
+  .clear-history-btn {
+    background: #fff0f0;
+    border: 1.5px solid #f5c6c6;
+    color: var(--danger);
+    padding: 7px 10px;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    width: 100%;
+    margin-top: 2px;
+  }
+  .clear-history-btn:hover { background: #ffe0e0; border-color: var(--danger); }
+
+  .confirm-bar {
+    display: none;
+    background: #fff8f0;
+    border: 1.5px solid #f5c6c6;
+    border-radius: 10px;
+    padding: 10px;
+    text-align: center;
+    font-size: 0.78rem;
+    color: var(--danger);
+    font-weight: 600;
+    gap: 6px;
+    flex-direction: column;
+  }
+  .confirm-bar.show { display: flex; }
+  .confirm-bar-btns { display: flex; gap: 6px; justify-content: center; margin-top: 4px; }
+  .confirm-yes {
+    background: var(--danger); color: #fff; border: none;
+    padding: 5px 14px; border-radius: 6px; font-size: 0.78rem;
+    font-family: 'Outfit', sans-serif; font-weight: 700; cursor: pointer;
+  }
+  .confirm-no {
+    background: var(--light-green); color: var(--accent); border: 1.5px solid var(--border);
+    padding: 5px 14px; border-radius: 6px; font-size: 0.78rem;
+    font-family: 'Outfit', sans-serif; font-weight: 700; cursor: pointer;
+  }
+
+  .history-list {
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+
+  .history-item {
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1.5px solid transparent;
+    cursor: pointer;
+    transition: all 0.18s;
+    position: relative;
+  }
+
+  .history-item:hover { background: var(--light-green); border-color: var(--border); }
+
+  .history-item.active-session { background: var(--mid-green); border-color: var(--accent2); }
+
+  .history-item-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 3px;
+  }
+
+  .history-item-meta {
+    font-size: 0.72rem;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .history-item-del {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 0.75rem;
+    padding: 2px 4px;
+    border-radius: 4px;
+    opacity: 0;
+    transition: all 0.15s;
+  }
+
+  .history-item:hover .history-item-del { opacity: 1; }
+  .history-item-del:hover { color: var(--danger); background: rgba(192,57,43,0.08); }
+
+  .history-empty {
+    text-align: center;
+    padding: 2rem 1rem;
+    color: var(--muted);
+    font-size: 0.82rem;
+    line-height: 1.6;
+  }
+
+  .chat-main {
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: 18px;
+    padding: 1.8rem;
+    box-shadow: 0 4px 24px rgba(45,122,45,0.08);
+  }
+
+  .chat-messages {
+    min-height: 300px;
+    max-height: 400px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 1rem 0;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+
+  .msg { display: flex; gap: 12px; align-items: flex-start; animation: fadeUp 0.25s ease; }
+  .msg.user { flex-direction: row-reverse; }
+
+  .avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem;
+  }
+
+  .ai-avatar { background: var(--accent); box-shadow: var(--glow); }
+  .user-avatar { background: var(--accent3); }
+
+  .bubble {
+    max-width: 78%;
+    padding: 12px 16px;
+    border-radius: 16px;
+    font-size: 0.93rem;
+    line-height: 1.6;
+  }
+
+  .msg.ai .bubble {
+    background: var(--light-green);
+    border: 1.5px solid var(--border);
+    border-top-left-radius: 4px;
+    color: var(--text);
+  }
+
+  .msg.user .bubble {
+    background: var(--accent);
+    border: 1.5px solid var(--accent3);
+    border-top-right-radius: 4px;
+    color: #fff;
+    text-align: right;
+  }
+
+  .typing-indicator span {
+    display: inline-block;
+    width: 7px; height: 7px;
+    background: var(--accent);
+    border-radius: 50%;
+    margin: 0 2px;
+    animation: bounce 1.2s ease-in-out infinite;
+  }
+  .typing-indicator span:nth-child(2) { animation-delay: 0.15s; }
+  .typing-indicator span:nth-child(3) { animation-delay: 0.3s; }
+
+  @keyframes bounce {
+    0%, 80%, 100% { transform: translateY(0); }
+    40% { transform: translateY(-8px); }
+  }
+
+  .chat-input-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 1.2rem;
+    padding-top: 1.2rem;
+    border-top: 1.5px solid var(--border);
+  }
+
+  .chat-input {
+    flex: 1;
+    background: var(--light-green);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 16px;
+    color: var(--text);
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color 0.2s;
+    resize: none;
+    height: 48px;
+  }
+
+  .chat-input:focus { border-color: var(--accent); background: #fff; }
+  .chat-input::placeholder { color: var(--muted); }
+
+  .send-btn {
+    background: var(--accent);
+    border: none;
+    border-radius: 12px;
+    color: white;
+    padding: 0 20px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: var(--glow);
+  }
+
+  .send-btn:hover { background: var(--accent3); transform: scale(1.04); }
+  .send-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-top: 0.5rem;
+  }
+
+  .status-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--success);
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  /* ── CLOCK ── */
+  .clock-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
+    padding: 2.5rem 1.8rem;
+  }
+
+  .clock-face {
+    width: 220px; height: 220px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 35%, #ffffff, #e8f5e8);
+    border: 4px solid var(--accent);
+    box-shadow: 0 0 0 8px rgba(45,122,45,0.08), 0 0 40px rgba(45,122,45,0.15);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .clock-face::before {
+    content: '';
+    position: absolute;
+    inset: 8px;
+    border-radius: 50%;
+    border: 1px solid rgba(45,122,45,0.2);
+  }
+
+  .hand {
+    position: absolute;
+    bottom: 50%;
+    left: 50%;
+    transform-origin: bottom center;
+    border-radius: 10px;
+  }
+
+  .hour-hand { width: 5px; height: 60px; background: var(--accent3); margin-left: -2.5px; box-shadow: 0 0 6px rgba(45,122,45,0.4); }
+  .minute-hand { width: 3px; height: 85px; background: var(--accent2); margin-left: -1.5px; box-shadow: 0 0 6px rgba(61,166,61,0.4); }
+  .second-hand { width: 2px; height: 95px; background: #c0392b; margin-left: -1px; }
+
+  .clock-center {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 12px; height: 12px;
+    background: var(--accent);
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--accent);
+    z-index: 10;
+  }
+
+  .digital-time {
+    font-family: 'Space Mono', monospace;
+    font-size: 3rem;
+    font-weight: 700;
+    color: var(--accent3);
+    letter-spacing: 2px;
+  }
+
+  .digital-date { font-size: 1rem; color: var(--muted); text-align: center; margin-top: -1rem; }
+
+  .clock-dots { display: flex; gap: 6px; margin-top: 0.5rem; }
+  .clock-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); transition: background 0.3s; }
+  .clock-dot.active { background: var(--accent2); }
+
+  .tick {
+    position: absolute;
+    width: 2px;
+    top: 10px;
+    left: 50%;
+    transform-origin: bottom center;
+    margin-left: -1px;
+  }
+
+  /* ── CALCULATOR ── */
+  .calc-display {
+    background: var(--light-green);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 1.2rem 1.4rem;
+    text-align: right;
+    margin-bottom: 1.2rem;
+  }
+
+  .calc-expr { color: var(--muted); font-family: 'Space Mono', monospace; font-size: 0.85rem; min-height: 22px; margin-bottom: 6px; }
+  .calc-result { font-family: 'Space Mono', monospace; font-size: 2.5rem; font-weight: 700; color: var(--accent3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .calc-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+
+  .calc-btn {
+    padding: 18px 10px;
+    border-radius: 12px;
+    border: 1.5px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    user-select: none;
+  }
+
+  .calc-btn:hover { background: var(--light-green); transform: translateY(-1px); }
+  .calc-btn:active { transform: scale(0.95); }
+  .calc-btn.op { background: var(--light-green); border-color: var(--accent2); color: var(--accent); font-weight: 700; }
+  .calc-btn.op:hover { background: var(--mid-green); }
+  .calc-btn.eq { background: var(--accent); border-color: var(--accent3); color: white; box-shadow: var(--glow); }
+  .calc-btn.eq:hover { background: var(--accent3); transform: scale(1.02); }
+  .calc-btn.clear { background: rgba(192,57,43,0.07); border-color: rgba(192,57,43,0.3); color: var(--danger); }
+  .calc-btn.span2 { grid-column: span 2; }
+
+  /* ── DICTIONARY ── */
+  .dict-search-row { display: flex; gap: 10px; margin-bottom: 1.5rem; }
+
+  .dict-input {
+    flex: 1;
+    background: var(--light-green);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 16px;
+    color: var(--text);
+    font-family: 'Outfit', sans-serif;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .dict-input:focus { border-color: var(--accent); background: #fff; }
+  .dict-input::placeholder { color: var(--muted); }
+
+  .dict-btn {
+    background: var(--accent);
+    border: none;
+    border-radius: 12px;
+    color: white;
+    padding: 12px 22px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .dict-btn:hover { background: var(--accent3); transform: translateY(-1px); }
+  .dict-result { animation: fadeUp 0.25s ease; }
+  .dict-word { font-size: 2rem; font-weight: 800; color: var(--accent3); margin-bottom: 4px; }
+  .dict-phonetic { font-family: 'Space Mono', monospace; color: var(--muted); font-size: 0.9rem; margin-bottom: 1.2rem; }
+
+  .dict-meaning { background: var(--light-green); border: 1.5px solid var(--border); border-radius: 12px; padding: 1.2rem; margin-bottom: 1rem; }
+  .dict-pos { font-size: 0.8rem; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); margin-bottom: 0.8rem; display: inline-block; background: var(--mid-green); padding: 3px 10px; border-radius: 20px; }
+  .dict-def { color: var(--text); line-height: 1.65; margin-bottom: 8px; padding-left: 12px; border-left: 3px solid var(--accent2); }
+  .dict-example { color: var(--muted); font-style: italic; font-size: 0.9rem; margin-top: 4px; padding-left: 12px; }
+  .dict-synonyms { margin-top: 0.8rem; display: flex; flex-wrap: wrap; gap: 6px; }
+  .dict-tag { background: var(--mid-green); border: 1.5px solid var(--border); color: var(--accent3); padding: 3px 10px; border-radius: 20px; font-size: 0.82rem; font-weight: 600; }
+
+  .dict-audio-btn {
+    background: var(--light-green);
+    border: 1.5px solid var(--border);
+    color: var(--accent);
+    padding: 7px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.88rem;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 600;
+    transition: all 0.2s;
+    margin-bottom: 1rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .dict-audio-btn:hover { background: var(--mid-green); }
+  .dict-empty { text-align: center; padding: 3rem; color: var(--muted); }
+  .dict-empty .icon { font-size: 3rem; margin-bottom: 1rem; }
+
+  .panel-title {
+    font-size: 1.4rem;
+    font-weight: 800;
+    margin-bottom: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--accent3);
+  }
+
+  .panel-title .icon {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem;
+  }
+
+  .icon-ai { background: var(--accent); }
+  .icon-clock { background: var(--accent2); }
+  .icon-calc { background: var(--accent3); }
+  .icon-dict { background: #5a9e5a; }
+
+  .htab-btn {
+    padding: 8px 18px;
+    border-radius: 50px;
+    border: 1.5px solid var(--border);
+    background: var(--surface);
+    color: var(--muted);
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .htab-btn:hover { border-color: var(--accent2); color: var(--accent); background: var(--light-green); }
+  .htab-btn.htab-active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  .hsession-card {
+    background: var(--light-green);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 1rem 1.2rem;
+    margin-bottom: 0.8rem;
+    cursor: pointer;
+    transition: box-shadow 0.18s, border-color 0.18s;
+  }
+  .hsession-card:hover { border-color: var(--accent2); box-shadow: 0 2px 12px rgba(45,122,45,0.12); }
+  .hsession-card-title { font-size: 0.96rem; font-weight: 700; color: var(--accent3); margin-bottom: 4px; display:flex;align-items:center;justify-content:space-between; }
+  .hsession-card-meta { font-size: 0.78rem; color: var(--muted); display:flex;gap:14px; }
+  .hsession-card-preview { font-size: 0.85rem; color: var(--text); margin-top:6px; white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+
+  .hdict-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: var(--light-green);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 0.9rem 1.2rem;
+    margin-bottom: 0.6rem;
+    cursor: pointer;
+    transition: border-color 0.18s;
+  }
+  .hdict-card:hover { border-color: var(--accent2); }
+  .hdict-word-badge { font-size: 1.1rem; font-weight: 800; color: var(--accent3); min-width: 100px; }
+  .hdict-meta { font-size: 0.78rem; color: var(--muted); }
+  .hdict-def-preview { font-size: 0.85rem; color: var(--text); flex:1; white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+  .hdict-del-btn { background:none;border:none;color:var(--muted);cursor:pointer;font-size:0.9rem;padding:4px 6px;border-radius:6px;flex-shrink:0;opacity:0.5;transition:all 0.15s; }
+  .hdict-del-btn:hover { opacity:1;color:var(--danger);background:rgba(192,57,43,0.08); }
+
+  .history-empty-state { text-align:center;padding:3rem 1rem;color:var(--muted); }
+  .history-empty-state .icon { font-size:2.5rem;margin-bottom:0.8rem; }
+
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+
+  @media (max-width: 700px) {
+    .chat-layout { grid-template-columns: 1fr; }
+    .history-sidebar { max-height: 180px; }
+    header { padding: 0 1rem; }
+    .panel { padding: 0 1rem 3rem; }
+    .digital-time { font-size: 2.2rem; }
+    .calc-btn { padding: 15px 8px; font-size: 0.95rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <img src="" alt="SIMBED Logo" id="simbed-logo">
+    <div class="logo-text">
+      <span class="brand">SimChat AI</span>
+      <span class="sub">DIGITAL PIONEERS</span>
+    </div>
+  </div>
+  <div id="header-clock">--:--:--</div>
+</header>
+
+<nav>
+  <button class="tab-btn active" onclick="switchTab('chat', this)">🤖 AI Chat</button>
+  <button class="tab-btn" onclick="switchTab('clock', this)">🕐 Clock</button>
+  <button class="tab-btn" onclick="switchTab('calculator', this)">🔢 Calculator</button>
+  <button class="tab-btn" onclick="switchTab('history', this)">📜 History</button>
+  <button class="tab-btn" onclick="switchTab('voice', this)">🎙️ Voice Chat</button>
+</nav>
+
+<!-- ── AI CHAT PANEL ── -->
+<div class="panel active" id="panel-chat">
+  <div class="panel-title">
+    <div class="icon icon-ai">🤖</div>
+    SimChat AI Assistant
+  </div>
+  <div class="chat-layout">
+    <div class="history-sidebar">
+      <div class="history-header">
+        <span class="history-title">💬 History</span>
+        <button class="new-chat-btn" onclick="newChat()">+ New</button>
+      </div>
+      <div class="history-list" id="history-list">
+        <div class="history-empty">No chats yet.<br>Start a conversation!</div>
+      </div>
+      <div class="confirm-bar" id="confirm-bar">
+        🗑️ Delete all chats?
+        <div class="confirm-bar-btns">
+          <button class="confirm-yes" onclick="confirmClearAll()">Yes, delete all</button>
+          <button class="confirm-no" onclick="cancelClearAll()">Cancel</button>
+        </div>
+      </div>
+      <button class="clear-history-btn" id="clear-history-btn" onclick="promptClearAll()">🗑️ Clear All History</button>
+    </div>
+    <div class="chat-main">
+      <div class="chat-messages" id="chat-messages">
+        <div class="msg ai">
+          <div class="avatar ai-avatar">🤖</div>
+          <div class="bubble">Hello! I'm <strong>SimChat AI</strong> by SIMBED — Digital Pioneers, Transforming Learning. Ask me anything! 🚀</div>
+        </div>
+      </div>
+      <div class="chat-input-row">
+        <textarea class="chat-input" id="chat-input" placeholder="Ask SimChat AI anything..." rows="1" onkeydown="handleChatKey(event)"></textarea>
+        <button class="send-btn" id="send-btn" onclick="sendMessage()">➤</button>
+      </div>
+      <div class="status-pill"><div class="status-dot"></div> SimChat AI is online</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── CLOCK PANEL ── -->
+<div class="panel" id="panel-clock">
+  <div class="panel-title"><div class="icon icon-clock">🕐</div>World Clock</div>
+  <div class="card clock-panel">
+    <!-- Timezone selector -->
+    <div style="width:100%;max-width:420px;margin-bottom:1.2rem;">
+      <label for="timezone-select" style="display:block;font-size:0.82rem;font-weight:700;color:var(--muted);margin-bottom:6px;letter-spacing:1px;text-transform:uppercase;">🌍 Select Country / Timezone</label>
+      <select id="timezone-select" onchange="onTimezoneChange()" style="width:100%;padding:10px 14px;border-radius:12px;border:1.5px solid var(--border);background:var(--light-green);color:var(--text);font-family:'Outfit',sans-serif;font-size:0.95rem;outline:none;cursor:pointer;appearance:none;-webkit-appearance:none;">
+        <optgroup label="🌍 Africa">
+          <option value="Africa/Abidjan">Ivory Coast — Abidjan</option>
+          <option value="Africa/Accra">Ghana — Accra</option>
+          <option value="Africa/Addis_Ababa">Ethiopia — Addis Ababa</option>
+          <option value="Africa/Cairo">Egypt — Cairo</option>
+          <option value="Africa/Casablanca">Morocco — Casablanca</option>
+          <option value="Africa/Johannesburg">South Africa — Johannesburg</option>
+          <option value="Africa/Lagos" selected>Nigeria — Lagos</option>
+          <option value="Africa/Nairobi">Kenya — Nairobi</option>
+          <option value="Africa/Tunis">Tunisia — Tunis</option>
+        </optgroup>
+        <optgroup label="🌎 Americas">
+          <option value="America/Bogota">Colombia — Bogotá</option>
+          <option value="America/Buenos_Aires">Argentina — Buenos Aires</option>
+          <option value="America/Chicago">USA — Chicago (CT)</option>
+          <option value="America/Los_Angeles">USA — Los Angeles (PT)</option>
+          <option value="America/Mexico_City">Mexico — Mexico City</option>
+          <option value="America/New_York">USA — New York (ET)</option>
+          <option value="America/Sao_Paulo">Brazil — São Paulo</option>
+          <option value="America/Toronto">Canada — Toronto</option>
+          <option value="America/Vancouver">Canada — Vancouver</option>
+        </optgroup>
+        <optgroup label="🌏 Asia">
+          <option value="Asia/Bangkok">Thailand — Bangkok</option>
+          <option value="Asia/Beijing">China — Beijing</option>
+          <option value="Asia/Dubai">UAE — Dubai</option>
+          <option value="Asia/Jakarta">Indonesia — Jakarta</option>
+          <option value="Asia/Karachi">Pakistan — Karachi</option>
+          <option value="Asia/Kolkata">India — Mumbai / Delhi</option>
+          <option value="Asia/Kuwait">Kuwait — Kuwait City</option>
+          <option value="Asia/Riyadh">Saudi Arabia — Riyadh</option>
+          <option value="Asia/Seoul">South Korea — Seoul</option>
+          <option value="Asia/Shanghai">China — Shanghai</option>
+          <option value="Asia/Singapore">Singapore</option>
+          <option value="Asia/Tokyo">Japan — Tokyo</option>
+        </optgroup>
+        <optgroup label="🌍 Europe">
+          <option value="Europe/Amsterdam">Netherlands — Amsterdam</option>
+          <option value="Europe/Berlin">Germany — Berlin</option>
+          <option value="Europe/Istanbul">Turkey — Istanbul</option>
+          <option value="Europe/London">UK — London</option>
+          <option value="Europe/Madrid">Spain — Madrid</option>
+          <option value="Europe/Moscow">Russia — Moscow</option>
+          <option value="Europe/Paris">France — Paris</option>
+          <option value="Europe/Rome">Italy — Rome</option>
+          <option value="Europe/Zurich">Switzerland — Zurich</option>
+        </optgroup>
+        <optgroup label="🌏 Oceania">
+          <option value="Australia/Melbourne">Australia — Melbourne</option>
+          <option value="Australia/Sydney">Australia — Sydney</option>
+          <option value="Pacific/Auckland">New Zealand — Auckland</option>
+        </optgroup>
+        <optgroup label="⏱ UTC">
+          <option value="UTC">UTC — Coordinated Universal Time</option>
+        </optgroup>
+      </select>
+    </div>
+    <!-- Analog clock -->
+    <div class="analog-clock">
+      <div class="clock-face" id="clock-face">
+        <div class="hand hour-hand" id="hour-hand"></div>
+        <div class="hand minute-hand" id="minute-hand"></div>
+        <div class="hand second-hand" id="second-hand"></div>
+        <div class="clock-center"></div>
+      </div>
+    </div>
+    <div class="digital-time" id="digital-time">--:--:--</div>
+    <div class="digital-date" id="digital-date">Loading...</div>
+    <div id="tz-label" style="font-size:0.85rem;color:var(--muted);margin-top:-0.5rem;font-weight:600;letter-spacing:0.5px;"></div>
+    <div class="clock-dots" id="clock-dots">
+      <div class="clock-dot"></div><div class="clock-dot"></div>
+      <div class="clock-dot"></div><div class="clock-dot"></div>
+      <div class="clock-dot"></div><div class="clock-dot"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── CALCULATOR PANEL ── -->
+<div class="panel" id="panel-calculator">
+  <div class="panel-title"><div class="icon icon-calc">🔢</div>Calculator</div>
+  <div class="card">
+    <div class="calc-display">
+      <div class="calc-expr" id="calc-expr"></div>
+      <div class="calc-result" id="calc-result">0</div>
+    </div>
+    <div class="calc-grid">
+      <button class="calc-btn clear span2" onclick="calcClear()">AC</button>
+      <button class="calc-btn op" onclick="calcDel()">⌫</button>
+      <button class="calc-btn op" onclick="calcInput('/')">÷</button>
+      <button class="calc-btn" onclick="calcInput('7')">7</button>
+      <button class="calc-btn" onclick="calcInput('8')">8</button>
+      <button class="calc-btn" onclick="calcInput('9')">9</button>
+      <button class="calc-btn op" onclick="calcInput('*')">×</button>
+      <button class="calc-btn" onclick="calcInput('4')">4</button>
+      <button class="calc-btn" onclick="calcInput('5')">5</button>
+      <button class="calc-btn" onclick="calcInput('6')">6</button>
+      <button class="calc-btn op" onclick="calcInput('-')">−</button>
+      <button class="calc-btn" onclick="calcInput('1')">1</button>
+      <button class="calc-btn" onclick="calcInput('2')">2</button>
+      <button class="calc-btn" onclick="calcInput('3')">3</button>
+      <button class="calc-btn op" onclick="calcInput('+')">+</button>
+      <button class="calc-btn" onclick="calcInput('%')">%</button>
+      <button class="calc-btn" onclick="calcInput('0')">0</button>
+      <button class="calc-btn" onclick="calcInput('.')">.</button>
+      <button class="calc-btn eq" onclick="calcEquals()">=</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── HISTORY PANEL ── -->
+<div class="panel" id="panel-history">
+  <div class="panel-title"><div class="icon" style="background:#5a7a5a">📜</div>Search & Chat History</div>
+  <div class="card">
+    <div style="background:var(--light-green);border:1.5px solid var(--border);border-radius:12px;padding:0.8rem 1.1rem;margin-bottom:1.3rem;font-size:0.82rem;color:var(--muted);display:flex;align-items:center;gap:8px;">
+      <span style="font-size:1.1rem;">🔒</span>
+      <span>Your history is private to this device/browser and is never shared with other users.</span>
+    </div>
+    <!-- Toolbar -->
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:1.4rem;">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button onclick="historyTab('chat')" id="htab-chat" class="htab-btn htab-active">💬 Chat Sessions</button>
+        <button onclick="historyTab('voice')" id="htab-dict" class="htab-btn">🎙️ Voice Queries</button>
+      </div>
+      <button onclick="clearCurrentHistoryTab()" class="clear-history-btn" style="width:auto;padding:7px 16px;">🗑️ Clear This History</button>
+    </div>
+
+    <!-- Chat history view -->
+    <div id="hview-chat">
+      <div id="history-sessions-list"></div>
+    </div>
+
+    <!-- Dictionary history view -->
+    <div id="hview-dict" style="display:none;">
+      <div id="history-dict-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── VOICE CHAT PANEL ── -->
+<div class="panel" id="panel-voice">
+  <div class="panel-title"><div class="icon" style="background:#2d7a2d">🎙️</div>Voice Chat</div>
+  <div class="card" style="display:flex;flex-direction:column;align-items:center;gap:1.5rem;padding:2.5rem 1.8rem;">
+
+    <!-- Status message -->
+    <div id="voice-status" style="font-size:1rem;color:var(--muted);text-align:center;font-weight:600;">
+      Press the microphone button and speak your question
+    </div>
+
+    <!-- Mic button -->
+    <button id="voice-mic-btn" onclick="toggleVoice()" style="
+      width:110px;height:110px;border-radius:50%;
+      background:var(--accent);border:none;
+      color:white;font-size:2.8rem;cursor:pointer;
+      box-shadow:0 0 0 0 rgba(45,122,45,0.4);
+      transition:all 0.2s;display:flex;align-items:center;justify-content:center;">
+      🎙️
+    </button>
+
+    <!-- Transcript display -->
+    <div id="voice-transcript" style="
+      width:100%;max-width:580px;min-height:60px;
+      background:var(--light-green);border:1.5px solid var(--border);
+      border-radius:14px;padding:1rem 1.2rem;
+      font-size:1rem;color:var(--text);line-height:1.6;
+      display:none;">
+    </div>
+
+    <!-- Send to AI button -->
+    <button id="voice-send-btn" onclick="sendVoiceMessage()" style="
+      display:none;
+      background:var(--accent);border:none;border-radius:12px;
+      color:white;padding:12px 28px;
+      font-family:'Outfit',sans-serif;font-size:1rem;font-weight:700;
+      cursor:pointer;transition:all 0.2s;box-shadow:var(--glow);">
+      ➤ Send to AI
+    </button>
+
+    <!-- AI response display -->
+    <div id="voice-response" style="
+      width:100%;max-width:580px;
+      background:var(--light-green);border:1.5px solid var(--border);
+      border-radius:14px;padding:1.2rem 1.4rem;
+      font-size:0.97rem;color:var(--text);line-height:1.7;
+      display:none;">
+    </div>
+
+    <!-- Browser support note -->
+    <div id="voice-support-note" style="font-size:0.78rem;color:var(--muted);text-align:center;margin-top:0.5rem;">
+      🌐 Works best in Chrome, Edge, and Safari
+    </div>
+  </div>
+</div>
+
+<script>
+// Embed logo
+document.getElementById('simbed-logo').src = 'data:image/jpeg;base64,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';
+
+function switchTab(tab, btn) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + tab).classList.add('active');
+  if (btn) btn.classList.add('active');
+  if (tab === 'history' && typeof renderHistoryPanel === 'function') renderHistoryPanel();
+}
+
+function updateHeaderClock() {
+  document.getElementById('header-clock').textContent = new Date().toLocaleTimeString('en-US', { hour12: false });
+}
+setInterval(updateHeaderClock, 1000);
+updateHeaderClock();
+
+let selectedTimezone = 'Africa/Lagos';
+
+function onTimezoneChange(){
+  const sel=document.getElementById('timezone-select');
+  selectedTimezone=sel.value;
+  updateClock();
+}
+
+function updateClock() {
+  const now = new Date();
+  // Get time in selected timezone
+  const tzDate = new Date(now.toLocaleString('en-US', {timeZone: selectedTimezone}));
+  const h = tzDate.getHours(), m = tzDate.getMinutes(), s = tzDate.getSeconds();
+
+  document.getElementById('hour-hand').style.transform = `rotate(${(h%12)*30+m*0.5}deg)`;
+  document.getElementById('minute-hand').style.transform = `rotate(${m*6+s*0.1}deg)`;
+  document.getElementById('second-hand').style.transform = `rotate(${s*6}deg)`;
+  document.getElementById('digital-time').textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+
+  const days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const months=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('digital-date').textContent = `${days[tzDate.getDay()]}, ${months[tzDate.getMonth()]} ${tzDate.getDate()}, ${tzDate.getFullYear()}`;
+  document.querySelectorAll('.clock-dot').forEach((d,i)=>d.classList.toggle('active',i<(s%6)+(s%6===0?6:0)));
+
+  // Show UTC offset label
+  const offsetMs = tzDate - new Date(now.toLocaleString('en-US',{timeZone:'UTC'}));
+  const offsetH = Math.round(offsetMs/3600000);
+  const offsetStr = offsetH===0?'UTC':(offsetH>0?'UTC+'+offsetH:'UTC'+offsetH);
+  const tzLabel=document.getElementById('tz-label');
+  if(tzLabel)tzLabel.textContent=`${selectedTimezone.replace('_',' ')} (${offsetStr})`;
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+(function(){
+  const face = document.getElementById('clock-face');
+  for(let i=0;i<12;i++){
+    const tick=document.createElement('div');
+    tick.className='tick';
+    tick.style.height=i%3===0?'16px':'8px';
+    tick.style.background=i%3===0?'rgba(45,122,45,0.7)':'rgba(45,122,45,0.25)';
+    tick.style.transform=`rotate(${i*30}deg) translateX(-50%)`;
+    tick.style.left='50%';
+    face.appendChild(tick);
+  }
+})();
+
+let calcExpr='',calcNew=true;
+function calcInput(val){
+  const display=document.getElementById('calc-result'),expr=document.getElementById('calc-expr'),ops=['+','-','*','/','%'];
+  if(calcNew&&!ops.includes(val)){calcExpr='';calcNew=false;}
+  if(val==='.'&&calcExpr.split(/[\+\-\*\/]/).pop().includes('.'))return;
+  if(ops.includes(val)&&ops.includes(calcExpr.slice(-1)))calcExpr=calcExpr.slice(0,-1);
+  calcExpr+=val;
+  expr.textContent=calcExpr.replace(/\*/g,'×').replace(/\//g,'÷');
+  try{const p=Function('"use strict";return('+calcExpr+')')();if(isFinite(p))display.textContent=parseFloat(p.toFixed(10));}catch(e){}
+}
+function calcEquals(){
+  const expr=document.getElementById('calc-expr'),display=document.getElementById('calc-result');
+  try{const r=Function('"use strict";return('+calcExpr+')')();if(!isFinite(r))throw new Error();expr.textContent=calcExpr.replace(/\*/g,'×').replace(/\//g,'÷')+' =';display.textContent=parseFloat(r.toFixed(10));calcExpr=String(r);calcNew=true;}
+  catch(e){display.textContent='Error';calcExpr='';calcNew=true;}
+}
+function calcClear(){calcExpr='';calcNew=true;document.getElementById('calc-result').textContent='0';document.getElementById('calc-expr').textContent='';}
+function calcDel(){calcExpr=calcExpr.slice(0,-1);document.getElementById('calc-expr').textContent=calcExpr.replace(/\*/g,'×').replace(/\//g,'÷');if(!calcExpr)document.getElementById('calc-result').textContent='0';}
+
+document.addEventListener('keydown',function(e){
+  if(document.getElementById('panel-calculator').classList.contains('active')){
+    if(/[0-9\+\-\*\/\.\%]/.test(e.key))calcInput(e.key);
+    else if(e.key==='Enter')calcEquals();
+    else if(e.key==='Backspace')calcDel();
+    else if(e.key==='Escape')calcClear();
+  }
+});
+
+// ── HISTORY TAB ──
+let currentHistoryTab = 'chat';
+
+// (replaced by voice chat version below)
+
+// (replaced by voice chat version below)
+
+function renderHistoryChatView(){
+  const el=document.getElementById('history-sessions-list');
+  const keys=Object.keys(sessions).sort((a,b)=>(sessions[b].updatedAt||0)-(sessions[a].updatedAt||0));
+  if(!keys.length){
+    el.innerHTML=`<div class="history-empty-state"><div class="icon">💬</div><p>No chat sessions yet.<br>Start a conversation in the AI Chat tab!</p></div>`;
+    return;
+  }
+  el.innerHTML=keys.map(id=>{
+    const s=sessions[id];
+    const date=s.updatedAt?new Date(s.updatedAt).toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):'';
+    const msgCount=s.messages?.length||0;
+    const lastMsg=s.messages?.slice(-1)[0];
+    const preview=lastMsg?lastMsg.content.slice(0,80)+(lastMsg.content.length>80?'…':''):'No messages yet';
+    return `<div class="hsession-card" onclick="loadSessionFromHistory('${id}')">
+      <div class="hsession-card-title">
+        <span>${escHtml(s.title||'New Chat')}</span>
+        <button onclick="deleteSession(event,'${id}');setTimeout(renderHistoryPanel,50);" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:0.8rem;padding:2px 6px;border-radius:6px;opacity:0.6;" title="Delete">✕</button>
+      </div>
+      <div class="hsession-card-meta">
+        <span>📅 ${date}</span>
+        <span>💬 ${msgCount} message${msgCount!==1?'s':''}</span>
+      </div>
+      <div class="hsession-card-preview">${escHtml(preview)}</div>
+    </div>`;
+  }).join('');
+}
+
+function loadSessionFromHistory(id){
+  loadSession(id);
+  // Switch to chat tab
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('panel-chat').classList.add('active');
+  document.querySelectorAll('.tab-btn').forEach(b=>{if(b.textContent.includes('AI Chat'))b.classList.add('active');});
+}
+
+// (replaced by voice chat version below)
+
+async function saveDictLookup(word, defPreview){
+  let dictHistory=[];
+  try{const r=await appStorage.get(DICT_KEY);if(r&&r.value)dictHistory=JSON.parse(r.value);}catch(e){}
+  dictHistory=dictHistory.filter(x=>x.word.toLowerCase()!==word.toLowerCase());
+  dictHistory.push({word,defPreview,timestamp:Date.now()});
+  if(dictHistory.length>100) dictHistory=dictHistory.slice(-100);
+  try{await appStorage.set(DICT_KEY,JSON.stringify(dictHistory));}catch(e){}
+}
+
+// (replaced by voice chat version below)
+
+// (replaced by voice chat version below)
+
+// (replaced by voice chat version below)
+
+// (history panel refresh is now handled directly inside switchTab below)
+
+async function lookupWord(){
+  const word=document.getElementById('dict-input').value.trim();
+  if(!word)return;
+  const resultEl=document.getElementById('dict-result');
+  resultEl.innerHTML=`<div style="text-align:center;padding:2rem;color:var(--muted)"><div style="font-size:2rem;margin-bottom:0.5rem">🔍</div>Looking up "<strong>${escHtml(word)}</strong>"...</div>`;
+  // Try primary API, then fallback to a CORS-friendly mirror
+  const urls=[
+    `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`,
+    `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word.toLowerCase())}`
+  ];
+  let lastErr=null;
+  for(const url of urls){
+    try{
+      const controller=new AbortController();
+      const tid=setTimeout(()=>controller.abort(),8000);
+      const res=await fetch(url,{signal:controller.signal,mode:'cors',cache:'no-cache'});
+      clearTimeout(tid);
+      if(!res.ok){
+        if(res.status===404){
+          resultEl.innerHTML=`<div class="dict-empty"><div class="icon">😕</div><p>No definition found for <strong>"${escHtml(word)}"</strong>.<br>Check spelling or try another word.</p></div>`;
+          return;
+        }
+        throw new Error('HTTP '+res.status);
+      }
+      const data=await res.json();
+      if(!data||!data.length)throw new Error('empty');
+      renderDictResult(data[0]);
+      return;
+    }catch(e){lastErr=e;}
+  }
+  resultEl.innerHTML=`<div class="dict-empty"><div class="icon">⚠️</div><p>Could not reach the dictionary service.<br>Please check your internet connection and try again.</p><p style="font-size:0.8rem;margin-top:0.6rem;color:var(--muted)">${lastErr?.message||''}</p></div>`;
+}
+
+function renderDictResult(entry){
+  const resultEl=document.getElementById('dict-result');
+  const phonetic=entry.phonetics?.find(p=>p.text)?.text||'';
+  const audioUrl=entry.phonetics?.find(p=>p.audio)?.audio||'';
+  let html=`<div class="dict-result"><div class="dict-word">${entry.word}</div>${phonetic?`<div class="dict-phonetic">${phonetic}</div>`:''} ${audioUrl?`<button class="dict-audio-btn" onclick="playAudio('${audioUrl}')">🔊 Listen</button>`:''}`;
+  entry.meanings.slice(0,3).forEach(meaning=>{
+    html+=`<div class="dict-meaning"><span class="dict-pos">${meaning.partOfSpeech}</span>`;
+    meaning.definitions.slice(0,3).forEach((def,i)=>{
+      html+=`<div class="dict-def">${i+1}. ${def.definition}</div>`;
+      if(def.example)html+=`<div class="dict-example">"${def.example}"</div>`;
+    });
+    if(meaning.synonyms?.length)html+=`<div class="dict-synonyms"><span style="color:var(--muted);font-size:0.82rem;margin-right:4px">Synonyms:</span>${meaning.synonyms.slice(0,6).map(s=>`<span class="dict-tag">${s}</span>`).join('')}</div>`;
+    html+=`</div>`;
+  });
+  html+=`</div>`;
+  resultEl.innerHTML=html;
+  // Save to history
+  const defPreview=entry.meanings?.[0]?.definitions?.[0]?.definition||'';
+  saveDictLookup(entry.word, defPreview);
+}
+
+function playAudio(url){try{new Audio(url).play();}catch(e){}}
+
+const systemPrompt=`You are SimChat AI, a friendly, knowledgeable, and concise AI assistant made by SIMBED — Digital Pioneers, Transforming Learning. You are helpful, accurate, and engaging. You answer questions on all topics including science, math, history, language, technology, and more. Keep responses clear and not too long unless asked for detail. Always be polite and encouraging.`;
+
+let chatHistory=[],currentSessionId=null,sessions={};
+
+function genId(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+
+// ── STORAGE ABSTRACTION ──
+// Uses window.storage when running inside a Claude.ai artifact (per-user,
+// persists in the cloud). Falls back to the browser's localStorage when
+// opened as a standalone HTML file (e.g. double-clicked, hosted on a
+// server, etc.) so history still works either way. localStorage is
+// already private to each browser/device — nothing is shared between
+// different users or devices.
+const hasArtifactStorage = (typeof window !== 'undefined' && window.storage && typeof window.storage.get === 'function');
+
+const appStorage = {
+  async get(key){
+    if(hasArtifactStorage){
+      try{ return await window.storage.get(key); }catch(e){ return null; }
+    }
+    try{
+      const v = localStorage.getItem(key);
+      return v===null ? null : { key, value: v };
+    }catch(e){ return null; }
+  },
+  async set(key, value){
+    if(hasArtifactStorage){
+      try{ return await window.storage.set(key, value); }catch(e){ return null; }
+    }
+    try{
+      localStorage.setItem(key, value);
+      return { key, value };
+    }catch(e){ return null; }
+  }
+};
+
+// ── PRIVACY: user-scoped storage key namespace ──
+// Inside Claude.ai, window.storage is already private per-user/per-account
+// (never shared across other people's devices or accounts). When running
+// standalone, localStorage is private to each individual browser/device.
+// Either way, different users/devices never see each other's data.
+const SESSIONS_KEY = `simchat-sessions`;
+const DICT_KEY = `simchat-dict-history`;
+
+async function saveSessionsToStorage(){try{await appStorage.set(SESSIONS_KEY,JSON.stringify(sessions));}catch(e){}}
+async function loadSessionsFromStorage(){try{const r=await appStorage.get(SESSIONS_KEY);if(r&&r.value)sessions=JSON.parse(r.value);}catch(e){sessions={};}}
+
+function renderHistorySidebar(){
+  const list=document.getElementById('history-list');
+  const clearBtn=document.getElementById('clear-history-btn');
+  const keys=Object.keys(sessions).sort((a,b)=>(sessions[b].updatedAt||0)-(sessions[a].updatedAt||0));
+  if(keys.length===0){list.innerHTML=`<div class="history-empty">No chats yet.<br>Start a conversation!</div>`;if(clearBtn)clearBtn.style.display='none';return;}
+  if(clearBtn)clearBtn.style.display='';
+  list.innerHTML=keys.map(id=>{
+    const s=sessions[id],isActive=id===currentSessionId;
+    const date=s.updatedAt?new Date(s.updatedAt).toLocaleDateString('en-GB',{day:'2-digit',month:'short'}):'';
+    return `<div class="history-item${isActive?' active-session':''}" onclick="loadSession('${id}')">
+      <div class="history-item-title">${escHtml(s.title||'New Chat')}</div>
+      <div class="history-item-meta"><span>${date}</span><button class="history-item-del" onclick="deleteSession(event,'${id}')" title="Delete">✕</button></div>
+    </div>`;
+  }).join('');
+}
+
+function escHtml(str){return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+function newChat(){
+  if(currentSessionId&&chatHistory.length>0){sessions[currentSessionId].messages=[...chatHistory];saveSessionsToStorage();}
+  currentSessionId=genId();chatHistory=[];
+  sessions[currentSessionId]={id:currentSessionId,title:'New Chat',messages:[],createdAt:Date.now(),updatedAt:Date.now()};
+  renderChatMessages([]);renderHistorySidebar();
+}
+
+function loadSession(id){
+  if(currentSessionId&&chatHistory.length>0){sessions[currentSessionId].messages=[...chatHistory];saveSessionsToStorage();}
+  currentSessionId=id;chatHistory=[...(sessions[id].messages||[])];
+  renderChatMessages(chatHistory);renderHistorySidebar();
+}
+
+function promptClearAll(){
+  const keys=Object.keys(sessions);
+  if(keys.length===0)return;
+  document.getElementById('confirm-bar').classList.add('show');
+  document.getElementById('clear-history-btn').style.display='none';
+}
+function cancelClearAll(){
+  document.getElementById('confirm-bar').classList.remove('show');
+  document.getElementById('clear-history-btn').style.display='';
+}
+async function confirmClearAll(){
+  sessions={};await saveSessionsToStorage();
+  document.getElementById('confirm-bar').classList.remove('show');
+  document.getElementById('clear-history-btn').style.display='';
+  newChat();
+}
+
+async function deleteSession(event,id){
+  event.stopPropagation();delete sessions[id];await saveSessionsToStorage();
+  if(currentSessionId===id){const keys=Object.keys(sessions).sort((a,b)=>(sessions[b].updatedAt||0)-(sessions[a].updatedAt||0));keys.length>0?loadSession(keys[0]):newChat();}
+  else renderHistorySidebar();
+}
+
+function renderChatMessages(messages){
+  const container=document.getElementById('chat-messages');
+  container.innerHTML='';
+  const greeting=document.createElement('div');
+  greeting.className='msg ai';
+  greeting.innerHTML=`<div class="avatar ai-avatar">🤖</div><div class="bubble">Hello! I'm <strong>SimChat AI</strong> by SIMBED — Digital Pioneers, Transforming Learning. Ask me anything! 🚀</div>`;
+  container.appendChild(greeting);
+  messages.forEach(m=>addMessageToDOM(m.role==='user'?'user':'ai',m.content));
+  container.scrollTop=container.scrollHeight;
+}
+
+function addMessageToDOM(role,text){
+  const container=document.getElementById('chat-messages');
+  const div=document.createElement('div');
+  div.className=`msg ${role==='user'?'user':'ai'}`;
+  div.innerHTML=`<div class="avatar ${role==='user'?'user-avatar':'ai-avatar'}">${role==='user'?'👤':'🤖'}</div><div class="bubble">${escHtml(text).replace(/\n/g,'<br>')}</div>`;
+  container.appendChild(div);
+  container.scrollTop=container.scrollHeight;
+  return div;
+}
+
+function showTyping(){
+  const container=document.getElementById('chat-messages');
+  const div=document.createElement('div');div.className='msg ai';div.id='typing-indicator';
+  div.innerHTML=`<div class="avatar ai-avatar">🤖</div><div class="bubble"><div class="typing-indicator"><span></span><span></span><span></span></div></div>`;
+  container.appendChild(div);container.scrollTop=container.scrollHeight;
+}
+
+function removeTyping(){const el=document.getElementById('typing-indicator');if(el)el.remove();}
+
+function handleChatKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}}
+
+async function sendMessage(){
+  const input=document.getElementById('chat-input'),btn=document.getElementById('send-btn');
+  const text=input.value.trim();if(!text)return;
+  if(!currentSessionId)newChat();
+  input.value='';btn.disabled=true;
+  addMessageToDOM('user',text);
+  chatHistory.push({role:'user',content:text});
+  showTyping();
+  if(chatHistory.length===1&&sessions[currentSessionId])sessions[currentSessionId].title=text.slice(0,40)+(text.length>40?'…':'');
+  // Persist the user's message immediately so it's never lost even if the AI call fails
+  if(sessions[currentSessionId]){sessions[currentSessionId].messages=[...chatHistory];sessions[currentSessionId].updatedAt=Date.now();}
+  await saveSessionsToStorage();renderHistorySidebar();
+  try{
+    const response=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({system:systemPrompt,messages:chatHistory})});
+    if(!response.ok)throw new Error('HTTP '+response.status);
+    const data=await response.json();removeTyping();
+    const reply=data.reply||'Sorry, I could not get a response. Please try again.';
+    chatHistory.push({role:'assistant',content:reply});
+    addMessageToDOM('ai',reply);
+  }catch(e){
+    removeTyping();
+    addMessageToDOM('ai','Oops! Something went wrong. Please try again.');
+  }
+  // Persist again to include the assistant reply (or the failure state) too
+  if(sessions[currentSessionId]){sessions[currentSessionId].messages=[...chatHistory];sessions[currentSessionId].updatedAt=Date.now();}
+  await saveSessionsToStorage();renderHistorySidebar();
+  btn.disabled=false;input.focus();
+}
+
+// ── VOICE CHAT ──
+let voiceRecognition = null;
+let voiceListening = false;
+let voiceTranscript = '';
+
+function initVoice() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    document.getElementById('voice-status').textContent = '❌ Voice not supported in this browser. Please use Chrome, Edge, or Safari.';
+    document.getElementById('voice-mic-btn').disabled = true;
+    return null;
+  }
+  const recognition = new SpeechRecognition();
+  recognition.lang = 'en-US';
+  recognition.continuous = false;
+  recognition.interimResults = true;
+
+  recognition.onstart = function() {
+    voiceListening = true;
+    document.getElementById('voice-status').textContent = '🔴 Listening... speak now';
+    document.getElementById('voice-mic-btn').style.background = '#c0392b';
+    document.getElementById('voice-mic-btn').style.boxShadow = '0 0 0 12px rgba(192,57,43,0.2)';
+    document.getElementById('voice-mic-btn').textContent = '⏹';
+    document.getElementById('voice-transcript').style.display = 'block';
+    document.getElementById('voice-transcript').textContent = '...';
+    document.getElementById('voice-send-btn').style.display = 'none';
+  };
+
+  recognition.onresult = function(e) {
+    let interim = '', final = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      if (e.results[i].isFinal) final += e.results[i][0].transcript;
+      else interim += e.results[i][0].transcript;
+    }
+    voiceTranscript = final || interim;
+    document.getElementById('voice-transcript').textContent = voiceTranscript;
+  };
+
+  recognition.onend = function() {
+    voiceListening = false;
+    document.getElementById('voice-mic-btn').style.background = 'var(--accent)';
+    document.getElementById('voice-mic-btn').style.boxShadow = '0 0 0 0 rgba(45,122,45,0.4)';
+    document.getElementById('voice-mic-btn').textContent = '🎙️';
+    if (voiceTranscript.trim()) {
+      document.getElementById('voice-status').textContent = '✅ Got it! Send to AI or speak again.';
+      document.getElementById('voice-send-btn').style.display = 'inline-block';
+    } else {
+      document.getElementById('voice-status').textContent = 'Nothing heard. Try again.';
+      document.getElementById('voice-transcript').style.display = 'none';
+    }
+  };
+
+  recognition.onerror = function(e) {
+    voiceListening = false;
+    document.getElementById('voice-mic-btn').style.background = 'var(--accent)';
+    document.getElementById('voice-mic-btn').textContent = '🎙️';
+    const msgs = { 'no-speech': 'No speech heard. Try again.', 'not-allowed': '❌ Microphone permission denied. Please allow microphone access in your browser.', 'network': 'Network error. Check your connection.' };
+    document.getElementById('voice-status').textContent = msgs[e.error] || 'Error: ' + e.error;
+  };
+
+  return recognition;
+}
+
+function toggleVoice() {
+  if (!voiceRecognition) voiceRecognition = initVoice();
+  if (!voiceRecognition) return;
+  if (voiceListening) {
+    voiceRecognition.stop();
+  } else {
+    voiceTranscript = '';
+    document.getElementById('voice-response').style.display = 'none';
+    voiceRecognition.start();
+  }
+}
+
+async function sendVoiceMessage() {
+  const text = voiceTranscript.trim();
+  if (!text) return;
+  const sendBtn = document.getElementById('voice-send-btn');
+  const statusEl = document.getElementById('voice-status');
+  const responseEl = document.getElementById('voice-response');
+
+  sendBtn.disabled = true;
+  sendBtn.textContent = '⏳ Thinking...';
+  statusEl.textContent = '🤖 SimChat AI is thinking...';
+  responseEl.style.display = 'none';
+
+  // Save to voice history
+  saveVoiceQuery(text);
+
+  try {
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ system: systemPrompt, messages: [{ role: 'user', content: text }] })
+    });
+    if (!response.ok) throw new Error('HTTP ' + response.status);
+    const data = await response.json();
+    const reply = data.reply || 'Sorry, no response received.';
+    responseEl.innerHTML = '<strong>🤖 SimChat AI:</strong><br>' + escHtml(reply).replace(/\n/g, '<br>');
+    responseEl.style.display = 'block';
+    statusEl.textContent = '✅ Done! Press mic to ask another question.';
+    // Also speak the reply using text-to-speech
+    if ('speechSynthesis' in window) {
+      const utter = new SpeechSynthesisUtterance(reply);
+      utter.rate = 1; utter.pitch = 1;
+      window.speechSynthesis.speak(utter);
+    }
+  } catch(e) {
+    responseEl.innerHTML = '<strong>❌ Error:</strong> Could not connect to AI. Please check your connection.';
+    responseEl.style.display = 'block';
+    statusEl.textContent = 'Something went wrong. Try again.';
+  }
+  sendBtn.disabled = false;
+  sendBtn.textContent = '➤ Send to AI';
+}
+
+// Voice query history
+async function saveVoiceQuery(text) {
+  let history = [];
+  try { const r = await appStorage.get(DICT_KEY); if (r && r.value) history = JSON.parse(r.value); } catch(e) {}
+  history.push({ word: text.slice(0, 60) + (text.length > 60 ? '…' : ''), defPreview: 'Voice query', timestamp: Date.now() });
+  if (history.length > 100) history = history.slice(-100);
+  try { await appStorage.set(DICT_KEY, JSON.stringify(history)); } catch(e) {}
+}
+
+async function renderHistoryDictView() {
+  const el = document.getElementById('history-dict-list');
+  let history = [];
+  try { const r = await appStorage.get(DICT_KEY); if (r && r.value) history = JSON.parse(r.value); } catch(e) {}
+  if (!history.length) {
+    el.innerHTML = `<div class="history-empty-state"><div class="icon">🎙️</div><p>No voice queries yet.<br>Go to Voice Chat tab and speak a question!</p></div>`;
+    return;
+  }
+  el.innerHTML = history.slice().reverse().map((item, i) => {
+    const idx = history.length - 1 - i;
+    const date = item.timestamp ? new Date(item.timestamp).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+    return `<div class="hdict-card">
+      <div class="hdict-word-badge">🎙️</div>
+      <div class="hdict-def-preview">${escHtml(item.word)}</div>
+      <div class="hdict-meta">${date}</div>
+      <button class="hdict-del-btn" onclick="deleteVoiceHistory(event,${idx})" title="Remove">✕</button>
+    </div>`;
+  }).join('');
+}
+
+async function deleteVoiceHistory(event, idx) {
+  event.stopPropagation();
+  let history = [];
+  try { const r = await appStorage.get(DICT_KEY); if (r && r.value) history = JSON.parse(r.value); } catch(e) {}
+  history.splice(idx, 1);
+  try { await appStorage.set(DICT_KEY, JSON.stringify(history)); } catch(e) {}
+  renderHistoryDictView();
+}
+
+// Fix historyTab to handle 'voice' instead of 'dict'
+function historyTab(tab) {
+  currentHistoryTab = tab;
+  document.getElementById('htab-chat').classList.toggle('htab-active', tab === 'chat');
+  document.getElementById('htab-dict').classList.toggle('htab-active', tab === 'voice');
+  document.getElementById('hview-chat').style.display = tab === 'chat' ? '' : 'none';
+  document.getElementById('hview-dict').style.display = tab === 'voice' ? '' : 'none';
+  renderHistoryPanel();
+}
+
+function renderHistoryPanel() {
+  if (currentHistoryTab === 'chat') renderHistoryChatView();
+  else renderHistoryDictView();
+}
+
+async function clearCurrentHistoryTab() {
+  if (currentHistoryTab === 'chat') {
+    sessions = {}; await saveSessionsToStorage(); newChat(); renderHistoryPanel();
+  } else {
+    try { await appStorage.set(DICT_KEY, JSON.stringify([])); } catch(e) {}
+    renderHistoryDictView();
+  }
+}
+
+(async function init(){
+  await loadSessionsFromStorage();
+  const keys=Object.keys(sessions).sort((a,b)=>(sessions[b].updatedAt||0)-(sessions[a].updatedAt||0));
+  if(keys.length>0){currentSessionId=keys[0];chatHistory=[...(sessions[currentSessionId].messages||[])];renderChatMessages(chatHistory);}
+  else newChat();
+  renderHistorySidebar();
+})();
+</script>
+</body>
+</html>
